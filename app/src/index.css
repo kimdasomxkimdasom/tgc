@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* thegratefulcamp.com 무드: 노을빛 오렌지·핑크, 로고의 핑크→버터→틸 그라데이션, 굵은 검정 디스플레이 서체 */
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Anton", "Pretendard Variable", sans-serif;
+
+  --color-ink: #161412;
+  --color-paper: #fff6e8;
+  --color-sunset: #f6a04d;
+  --color-pink: #f59ad3;
+  --color-butter: #f8df8b;
+  --color-teal: #3fc7b3;
+  --color-sea: #2b93b8;
+  --color-flare: #e8352b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: linear-gradient(180deg, var(--color-sunset), var(--color-pink));
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 종이 질감 노이즈 — 사이트 티켓 이미지의 거친 종이 느낌 */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* 로고 색 그라데이션 글자 */
+.logo-gradient {
+  background: linear-gradient(180deg, var(--color-pink) 15%, var(--color-butter) 50%, var(--color-teal) 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

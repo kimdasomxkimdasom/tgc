@@ -1,0 +1,9 @@
+# 개인 기획/메모 (깃에 올리지 않음)
+notes/
+
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
