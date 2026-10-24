@@ -3,6 +3,7 @@ import CoverImage from '../components/CoverImage'
 import PageHeader from '../components/PageHeader'
 import Placeholder from '../components/Placeholder'
 import { PROGRAM_CATEGORIES, type Program, fetchProgram, programGradient } from '../lib/program'
+import { fetchProgramPerformances, formatFestivalDay, formatPerformanceTime } from '../lib/timetable'
 import { useAsync } from '../lib/useAsync'
 
 // 라인업 듣기 링크: 등록된 주소가 있으면 그 주소, 없으면 각 서비스 검색 결과로 연결
@@ -103,11 +104,38 @@ function ProgramDetail({ program: p }: { program: Program }) {
         </a>
       )}
 
-      {/* 타임테이블(performance) 만들면 이 프로그램의 공연 시간 표시 */}
-      <div>
-        <h3 className="mb-2 font-display text-xl uppercase tracking-wide">Schedule</h3>
-        <Placeholder>공연·진행 시간이 들어갈 자리</Placeholder>
-      </div>
+      <Schedule programId={p.id} />
     </article>
+  )
+}
+
+// 이 프로그램의 공연·진행 일정 (타임테이블에서)
+function Schedule({ programId }: { programId: number }) {
+  const performances = useAsync(() => fetchProgramPerformances(programId), [programId])
+  if (performances.status !== 'success' || performances.data.length === 0) return null
+
+  return (
+    <div>
+      <h3 className="mb-2 font-display text-xl uppercase tracking-wide">Schedule</h3>
+      <ul className="divide-y divide-ink/10 overflow-hidden rounded-2xl border-2 border-ink bg-white/60">
+        {performances.data.map((perf) => {
+          const { date, weekday } = formatFestivalDay(perf.festival_day)
+          return (
+            <li key={perf.id}>
+              <Link
+                to={`/timetable?day=${perf.festival_day}`}
+                className="flex items-center gap-3 px-4 py-3 text-sm active:bg-butter/40"
+              >
+                <span className="font-display text-base uppercase tracking-wide">
+                  {date} {weekday}
+                </span>
+                <span className="font-semibold">{formatPerformanceTime(perf)}</span>
+                <span className="ml-auto text-xs font-semibold uppercase text-ink/55">{perf.stage.name}</span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
