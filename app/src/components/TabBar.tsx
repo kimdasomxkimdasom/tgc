@@ -22,7 +22,12 @@ const tabs = [
       </>
     ),
   },
-  { to: '/food', label: '푸드', icon: <path d="M7 3v18M4.5 3v4.5a2.5 2.5 0 0 0 5 0V3M17 21V3c-2 0-3.5 2.5-3.5 5.5S15 13 17 13" /> },
+  {
+    to: '/partners',
+    label: '파트너스',
+    // 부스 천막
+    icon: <path d="M3 9 5 4h14l2 5M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3M5 12v8h14v-8M10 20v-5h4v5" />,
+  },
   { to: '/map', label: '맵', icon: <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" /> },
   { to: '/more', label: '더보기', icon: <path d="M4 7h16M4 12h16M4 17h16" /> },
 ]

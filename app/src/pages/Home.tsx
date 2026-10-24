@@ -6,6 +6,7 @@ import { fetchNotices } from '../lib/notice'
 import { useAsync } from '../lib/useAsync'
 
 const TICKET_URL = 'https://thegratefulcamp.com/lookbook/list_basic.html?cate_no=25'
+const MERCH_URL = 'https://thegratefulcamp.cafe24.com/product/list.html?cate_no=60'
 
 const tickets = [
   { name: ['General', 'Ticket'], sub: '관람권 예매하기', bg: 'from-sunset to-pink', star: 'text-pink' },
@@ -79,6 +80,21 @@ export default function Home() {
           </a>
         ))}
       </section>
+
+      {/* 공식 MD 스토어 (cafe24) */}
+      <a
+        href={MERCH_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="grain relative flex items-center overflow-hidden rounded-2xl border-2 border-ink bg-teal px-4 py-4 shadow-[4px_4px_0_var(--color-ink)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+      >
+        <div className="relative">
+          <p className="font-display text-[1.7rem] uppercase leading-none">Merch</p>
+          <p className="mt-1.5 text-xs font-bold">공식 MD 구경하기 →</p>
+        </div>
+        <Star className="absolute -right-3 top-1/2 size-20 -translate-y-1/2 text-butter" />
+        <Star className="absolute right-16 top-3 size-5 text-paper" />
+      </a>
 
       <section>
         <SectionTitle en="Today" ko="오늘의 공연" />
