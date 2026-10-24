@@ -8,6 +8,13 @@ export const PARTNER_CATEGORIES = [
 
 export type PartnerCategory = (typeof PARTNER_CATEGORIES)[number]['key']
 
+// 이미지가 없을 때 카드 배경색
+export const partnerGradient: Record<PartnerCategory, string> = {
+  fnb: 'from-sunset to-pink',
+  activity: 'from-butter to-teal',
+  seller: 'from-pink to-butter',
+}
+
 export function isPartnerCategory(value: string | undefined): value is PartnerCategory {
   return PARTNER_CATEGORIES.some((c) => c.key === value)
 }

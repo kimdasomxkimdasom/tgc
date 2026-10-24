@@ -3,8 +3,8 @@ import { NavLink } from 'react-router-dom'
 const tabs = [
   { to: '/', label: '홈', icon: <path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /> },
   {
-    to: '/lineup',
-    label: '라인업',
+    to: '/program',
+    label: '프로그램',
     icon: (
       <>
         <rect x="9" y="3" width="6" height="11" rx="3" />

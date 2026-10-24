@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
-import Lineup from './pages/Lineup'
+import ProgramListPage from './pages/ProgramListPage'
+import ProgramDetailPage from './pages/ProgramDetailPage'
 import Timetable from './pages/Timetable'
 import PartnerListPage from './pages/PartnerListPage'
 import PartnerDetailPage from './pages/PartnerDetailPage'
@@ -16,12 +17,15 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="lineup" element={<Lineup />} />
+        <Route path="program" element={<Navigate to="/program/lineup" replace />} />
+        <Route path="program/:category" element={<ProgramListPage />} />
+        <Route path="program/:category/:id" element={<ProgramDetailPage />} />
         <Route path="timetable" element={<Timetable />} />
         <Route path="partners" element={<Navigate to="/partners/fnb" replace />} />
         <Route path="partners/:category" element={<PartnerListPage />} />
         <Route path="partners/:category/:id" element={<PartnerDetailPage />} />
         {/* 예전 주소 */}
+        <Route path="lineup" element={<Navigate to="/program/lineup" replace />} />
         <Route path="food" element={<Navigate to="/partners/fnb" replace />} />
         <Route path="map" element={<SiteMap />} />
         <Route path="more" element={<More />} />
