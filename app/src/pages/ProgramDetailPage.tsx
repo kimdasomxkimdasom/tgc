@@ -2,7 +2,9 @@ import { Link, useParams } from 'react-router-dom'
 import CoverImage from '../components/CoverImage'
 import PageHeader from '../components/PageHeader'
 import Placeholder from '../components/Placeholder'
+import StarButton from '../components/StarButton'
 import { PROGRAM_CATEGORIES, type Program, fetchProgram, programGradient } from '../lib/program'
+import { useMyTimetable } from '../lib/myTimetable'
 import { fetchProgramPerformances, formatFestivalDay, formatPerformanceTime } from '../lib/timetable'
 import { useAsync } from '../lib/useAsync'
 
@@ -112,6 +114,7 @@ function ProgramDetail({ program: p }: { program: Program }) {
 // 이 프로그램의 공연·진행 일정 (타임테이블에서)
 function Schedule({ programId }: { programId: number }) {
   const performances = useAsync(() => fetchProgramPerformances(programId), [programId])
+  const my = useMyTimetable()
   if (performances.status !== 'success' || performances.data.length === 0) return null
 
   return (
@@ -121,17 +124,18 @@ function Schedule({ programId }: { programId: number }) {
         {performances.data.map((perf) => {
           const { date, weekday } = formatFestivalDay(perf.festival_day)
           return (
-            <li key={perf.id}>
+            <li key={perf.id} className="flex items-center gap-2 pr-3">
               <Link
                 to={`/timetable?day=${perf.festival_day}`}
-                className="flex items-center gap-3 px-4 py-3 text-sm active:bg-butter/40"
+                className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5 py-3 pl-4 text-sm active:bg-butter/40"
               >
                 <span className="font-display text-base uppercase tracking-wide">
                   {date} {weekday}
                 </span>
                 <span className="font-semibold">{formatPerformanceTime(perf)}</span>
-                <span className="ml-auto text-xs font-semibold uppercase text-ink/55">{perf.stage.name}</span>
+                <span className="text-xs font-semibold uppercase text-ink/55">{perf.stage.name}</span>
               </Link>
+              <StarButton saved={my.has(perf.id)} onToggle={() => my.toggle(perf.id)} className="size-9 shrink-0" />
             </li>
           )
         })}
