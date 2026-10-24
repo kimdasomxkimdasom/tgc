@@ -35,9 +35,10 @@ export default function CardGrid({
             />
             <div className="px-3 py-2.5">
               <p className="truncate text-sm font-bold">{item.name}</p>
-              {item.name_en && item.name_en !== item.name && (
-                <p className="truncate text-[11px] uppercase text-ink/50">{item.name_en}</p>
-              )}
+              {/* 영문 이름이 없거나 한글과 같아도 줄은 남겨서 카드 높이 맞추기 */}
+              <p className="truncate text-[11px] uppercase text-ink/50">
+                {item.name_en && item.name_en !== item.name ? item.name_en : ' '}
+              </p>
             </div>
           </Link>
         </li>
