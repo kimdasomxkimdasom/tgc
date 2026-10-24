@@ -5,14 +5,15 @@ import Placeholder from '../components/Placeholder'
 import { PROGRAM_CATEGORIES, type Program, fetchProgram, programGradient } from '../lib/program'
 import { useAsync } from '../lib/useAsync'
 
-// 값이 있는 링크만 버튼으로
-function links(p: Program) {
+// 라인업 듣기 링크: 등록된 주소가 있으면 그 주소, 없으면 각 서비스 검색 결과로 연결
+// (폰에서는 https 링크가 설치된 앱으로 열림)
+function listenLinks(p: Program) {
+  const q = encodeURIComponent(p.name_en ?? p.name)
   return [
-    p.spotify_url && { label: 'Spotify', href: p.spotify_url },
-    p.apple_music_url && { label: 'Apple Music', href: p.apple_music_url },
-    p.youtube_url && { label: 'YouTube', href: p.youtube_url },
-    p.instagram && { label: `@${p.instagram}`, href: `https://instagram.com/${p.instagram}` },
-  ].filter((l): l is { label: string; href: string } => Boolean(l))
+    { label: 'Apple Music', dot: 'bg-[#fa2d48]', href: p.apple_music_url ?? `https://music.apple.com/kr/search?term=${q}` },
+    { label: 'Spotify', dot: 'bg-[#1ed760]', href: p.spotify_url ?? `https://open.spotify.com/search/${q}` },
+    { label: 'YouTube', dot: 'bg-[#ff0000]', href: p.youtube_url ?? `https://www.youtube.com/results?search_query=${q}` },
+  ]
 }
 
 export default function ProgramDetailPage() {
@@ -71,20 +72,35 @@ function ProgramDetail({ program: p }: { program: Program }) {
         <p className="whitespace-pre-line break-words text-[15px] leading-relaxed">{p.description}</p>
       )}
 
-      {links(p).length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {links(p).map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-paper active:opacity-80"
-            >
-              {l.label} ↗
-            </a>
-          ))}
+      {p.category === 'lineup' && (
+        <div>
+          <h3 className="mb-2 font-display text-xl uppercase tracking-wide">Listen</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {listenLinks(p).map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-1.5 rounded-2xl border-2 border-ink bg-white/60 px-2 py-3 text-[13px] font-bold shadow-[3px_3px_0_var(--color-ink)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              >
+                <span className={`size-2.5 shrink-0 rounded-full ${l.dot}`} aria-hidden="true" />
+                {l.label}
+              </a>
+            ))}
+          </div>
         </div>
+      )}
+
+      {p.instagram && (
+        <a
+          href={`https://instagram.com/${p.instagram}`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-paper active:opacity-80"
+        >
+          @{p.instagram} ↗
+        </a>
       )}
 
       {/* 타임테이블(performance) 만들면 이 프로그램의 공연 시간 표시 */}
