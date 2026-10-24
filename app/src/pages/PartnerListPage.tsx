@@ -1,8 +1,9 @@
-import { Link, NavLink, Navigate, useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
+import CardGrid from '../components/CardGrid'
+import CategoryTabs from '../components/CategoryTabs'
 import PageHeader from '../components/PageHeader'
-import PartnerImage from '../components/PartnerImage'
 import Placeholder from '../components/Placeholder'
-import { PARTNER_CATEGORIES, fetchPartners, isPartnerCategory } from '../lib/partner'
+import { PARTNER_CATEGORIES, type PartnerCategory, fetchPartners, isPartnerCategory, partnerGradient } from '../lib/partner'
 import { useAsync } from '../lib/useAsync'
 
 export default function PartnerListPage() {
@@ -11,30 +12,13 @@ export default function PartnerListPage() {
   return <PartnerList category={category} />
 }
 
-function PartnerList({ category }: { category: Parameters<typeof fetchPartners>[0] }) {
+function PartnerList({ category }: { category: PartnerCategory }) {
   const partners = useAsync(() => fetchPartners(category), [category])
 
   return (
     <>
       <PageHeader title="Partners" sub="파트너스" />
-
-      {/* F&B / 액티비티 / 셀러 */}
-      <nav className="sticky top-[58px] z-10 flex gap-2 bg-paper/95 px-4 py-3 backdrop-blur">
-        {PARTNER_CATEGORIES.map((c) => (
-          <NavLink
-            key={c.key}
-            to={`/partners/${c.key}`}
-            replace
-            className={({ isActive }) =>
-              `rounded-full border-2 border-ink px-3.5 py-1 font-display text-sm uppercase tracking-wide ${
-                isActive ? 'bg-ink text-butter' : 'bg-transparent'
-              }`
-            }
-          >
-            {c.en}
-          </NavLink>
-        ))}
-      </nav>
+      <CategoryTabs base="/partners" categories={PARTNER_CATEGORIES} />
 
       <section className="px-4 pb-6">
         {partners.status === 'loading' && <Placeholder>불러오는 중…</Placeholder>}
@@ -43,22 +27,11 @@ function PartnerList({ category }: { category: Parameters<typeof fetchPartners>[
           (partners.data.length === 0 ? (
             <Placeholder>아직 등록된 파트너가 없어요</Placeholder>
           ) : (
-            <ul className="grid grid-cols-2 gap-3">
-              {partners.data.map((p) => (
-                <li key={p.id}>
-                  <Link
-                    to={`/partners/${category}/${p.id}`}
-                    className="block overflow-hidden rounded-2xl border-2 border-ink bg-white/60 active:translate-y-0.5"
-                  >
-                    <PartnerImage partner={p} className="aspect-square w-full border-b-2 border-ink" />
-                    <div className="px-3 py-2.5">
-                      <p className="truncate text-sm font-bold">{p.name}</p>
-                      {p.name_en && <p className="truncate text-[11px] uppercase text-ink/50">{p.name_en}</p>}
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <CardGrid
+              items={partners.data}
+              linkTo={(p) => `/partners/${category}/${p.id}`}
+              gradient={partnerGradient[category]}
+            />
           ))}
       </section>
     </>

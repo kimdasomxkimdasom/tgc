@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
-import PartnerImage from '../components/PartnerImage'
+import CoverImage from '../components/CoverImage'
 import Placeholder from '../components/Placeholder'
-import { PARTNER_CATEGORIES, fetchPartner } from '../lib/partner'
+import { PARTNER_CATEGORIES, fetchPartner, partnerGradient } from '../lib/partner'
 import { useAsync } from '../lib/useAsync'
 
 export default function PartnerDetailPage() {
@@ -27,7 +27,13 @@ export default function PartnerDetailPage() {
         )}
         {partner.status === 'success' && partner.data && (
           <article className="space-y-5">
-            <PartnerImage partner={partner.data} className="aspect-square w-full rounded-3xl border-2 border-ink" />
+            <CoverImage
+              src={partner.data.image_url}
+              name={partner.data.name}
+              initial={partner.data.name_en ?? partner.data.name}
+              gradient={partnerGradient[partner.data.category]}
+              className="aspect-square w-full rounded-3xl border-2 border-ink text-8xl"
+            />
 
             <div>
               <span className="rounded-full border-2 border-ink px-2.5 py-0.5 font-display text-xs uppercase tracking-wide">
