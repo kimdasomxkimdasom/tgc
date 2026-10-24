@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import BottomSheet from '../components/BottomSheet'
 import PageHeader from '../components/PageHeader'
 import Placeholder from '../components/Placeholder'
+import Star from '../components/Star'
+import StarButton from '../components/StarButton'
+import { useMyTimetable } from '../lib/myTimetable'
 import {
   type Performance,
   type Stage,
   fetchTimetable,
   formatFestivalDay,
   formatMinutes,
+  formatPerformanceTime,
   minutesFromDayStart,
   nowInFestival,
 } from '../lib/timetable'
@@ -46,36 +51,80 @@ export default function Timetable() {
 function TimetableView({ stages, performances }: { stages: Stage[]; performances: Performance[] }) {
   const days = [...new Set(performances.map((p) => p.festival_day))]
   const now = useNow()
+  const my = useMyTimetable()
+  const [selected, setSelected] = useState<Performance | null>(null)
+  const closeSheet = useCallback(() => setSelected(null), [setSelected])
 
-  // 선택한 날짜는 주소(?day=)에 저장 → 새로고침·공유해도 유지. 없으면 오늘(페스티벌 중일 때) 또는 첫날
+  // 날짜(?day=)와 MY 보기(?my=1)는 주소에 저장 → 새로고침·공유해도 유지
+  // 날짜가 없으면 오늘(페스티벌 중일 때) 또는 첫날
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('day')
   const day = requested && days.includes(requested) ? requested : days.includes(now.day) ? now.day : days[0]
+  const myOnly = searchParams.get('my') === '1'
+  const setView = (nextDay: string, nextMyOnly: boolean) =>
+    setSearchParams({ day: nextDay, ...(nextMyOnly && { my: '1' }) }, { replace: true })
 
   const dayPerformances = performances.filter((p) => p.festival_day === day)
+  const savedToday = dayPerformances.filter((p) => my.has(p.id)).length
 
   return (
     <>
-      {/* 날짜 버튼 */}
-      <nav className="sticky top-[58px] z-20 flex gap-2 overflow-x-auto bg-paper/95 px-4 py-3 backdrop-blur">
-        {days.map((d) => {
-          const { date, weekday } = formatFestivalDay(d)
-          return (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setSearchParams({ day: d }, { replace: true })}
-              className={`shrink-0 rounded-full border-2 border-ink px-3.5 py-1 font-display text-sm uppercase tracking-wide ${
-                d === day ? 'bg-ink text-butter' : ''
-              }`}
-            >
-              {date} {weekday}
-            </button>
-          )
-        })}
+      {/* 날짜 버튼 + MY 보기 */}
+      <nav className="sticky top-[58px] z-20 flex items-center gap-2 bg-paper/95 py-3 pl-4 pr-3 backdrop-blur">
+        <div className="flex flex-1 gap-2 overflow-x-auto">
+          {days.map((d) => {
+            const { date, weekday } = formatFestivalDay(d)
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setView(d, myOnly)}
+                className={`shrink-0 rounded-full border-2 border-ink px-3 py-1 font-display text-sm uppercase tracking-wide ${
+                  d === day ? 'bg-ink text-butter' : ''
+                }`}
+              >
+                {date} {weekday}
+              </button>
+            )
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setView(day, !myOnly)}
+          aria-pressed={myOnly}
+          className={`flex shrink-0 items-center gap-1 rounded-full border-2 border-ink px-2.5 py-1 font-display text-sm uppercase tracking-wide ${
+            myOnly ? 'bg-butter' : ''
+          }`}
+        >
+          <Star className="size-3.5" />
+          My
+        </button>
       </nav>
 
-      <DayGrid stages={stages} performances={dayPerformances} nowMinutes={now.day === day ? now.minutes : null} />
+      {myOnly && savedToday === 0 && (
+        <p className="mx-4 mb-1 rounded-xl bg-butter/50 px-3 py-2 text-xs font-medium">
+          이 날 저장한 공연이 없어요. 공연을 눌러 ☆를 저장해 보세요.
+        </p>
+      )}
+
+      <DayGrid
+        stages={stages}
+        performances={dayPerformances}
+        nowMinutes={now.day === day ? now.minutes : null}
+        isSaved={my.has}
+        myOnly={myOnly}
+        onSelect={setSelected}
+      />
+
+      {selected && (
+        <PerformanceSheet
+          performance={selected}
+          stage={stages.find((s) => s.id === selected.stage_id)}
+          saved={my.has(selected.id)}
+          onToggle={() => my.toggle(selected.id)}
+          onClose={closeSheet}
+        />
+      )}
     </>
   )
 }
@@ -84,10 +133,16 @@ function DayGrid({
   stages,
   performances,
   nowMinutes,
+  isSaved,
+  myOnly,
+  onSelect,
 }: {
   stages: Stage[]
   performances: Performance[]
   nowMinutes: number | null
+  isSaved: (id: number) => boolean
+  myOnly: boolean
+  onSelect: (p: Performance) => void
 }) {
   // 그날 첫 공연 ~ 마지막 공연을 정시 단위로
   const starts = performances.map((p) => minutesFromDayStart(p.starts_at, p.festival_day))
@@ -141,7 +196,14 @@ function DayGrid({
             {performances
               .filter((p) => p.stage_id === stage.id)
               .map((p) => (
-                <PerformanceBlock key={p.id} performance={p} gridStart={gridStart} />
+                <PerformanceBlock
+                  key={p.id}
+                  performance={p}
+                  gridStart={gridStart}
+                  saved={isSaved(p.id)}
+                  dimmed={myOnly && !isSaved(p.id)}
+                  onSelect={() => onSelect(p)}
+                />
               ))}
           </div>
         ))}
@@ -161,13 +223,35 @@ function DayGrid({
   )
 }
 
-function PerformanceBlock({ performance: p, gridStart }: { performance: Performance; gridStart: number }) {
+function PerformanceBlock({
+  performance: p,
+  gridStart,
+  saved,
+  dimmed,
+  onSelect,
+}: {
+  performance: Performance
+  gridStart: number
+  saved: boolean
+  dimmed: boolean
+  onSelect: () => void
+}) {
   const start = minutesFromDayStart(p.starts_at, p.festival_day)
   const end = minutesFromDayStart(p.ends_at, p.festival_day)
   const short = end - start < 50 // 짧은 공연은 시간과 제목을 한 줄씩만
 
-  const content = (
-    <>
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`absolute inset-x-0 overflow-hidden rounded-md px-1 py-0.5 text-center transition active:brightness-95 ${
+        kindStyle[p.kind]
+      } ${saved ? 'border-[2.5px] border-ink shadow-[2px_2px_0_var(--color-ink)]' : 'border-[1.5px] border-ink'} ${
+        dimmed ? 'opacity-25' : ''
+      }`}
+      style={{ top: px(start - gridStart) + 1, height: px(end - start) - 2 }}
+    >
+      {saved && <Star className="absolute right-0.5 top-0.5 size-3 text-ink" />}
       <span className="block text-[9px] font-semibold leading-tight text-ink/70">
         {formatMinutes(start)}-{formatMinutes(end)}
       </span>
@@ -177,21 +261,52 @@ function PerformanceBlock({ performance: p, gridStart }: { performance: Performa
       {!short && p.subtitle && (
         <span className="mt-0.5 block line-clamp-2 text-[9px] leading-tight text-ink/70">{p.subtitle}</span>
       )}
-    </>
+    </button>
   )
+}
 
-  const className = `absolute inset-x-0 overflow-hidden rounded-md border-[1.5px] border-ink px-1 py-0.5 text-center ${kindStyle[p.kind]}`
-  const style = { top: px(start - gridStart) + 1, height: px(end - start) - 2 }
+// 공연을 누르면 올라오는 창: 정보 + 저장 + 프로그램 상세로
+function PerformanceSheet({
+  performance: p,
+  stage,
+  saved,
+  onToggle,
+  onClose,
+}: {
+  performance: Performance
+  stage: Stage | undefined
+  saved: boolean
+  onToggle: () => void
+  onClose: () => void
+}) {
+  const { date, weekday } = formatFestivalDay(p.festival_day)
 
-  // 프로그램과 연결된 공연만 상세로 이동
-  return p.program ? (
-    <Link to={`/program/${p.program.category}/${p.program.id}`} className={`${className} active:brightness-95`} style={style}>
-      {content}
-    </Link>
-  ) : (
-    <div className={className} style={style}>
-      {content}
-    </div>
+  return (
+    <BottomSheet onClose={onClose}>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-sm uppercase tracking-wide text-ink/60">
+            {date} {weekday} · {formatPerformanceTime(p)} · {stage?.name}
+          </p>
+          <h2 className="mt-1 text-xl font-bold leading-snug">{p.title}</h2>
+          {p.subtitle && <p className="mt-0.5 text-sm text-ink/60">{p.subtitle}</p>}
+        </div>
+        <StarButton saved={saved} onToggle={onToggle} className="size-12 shrink-0" />
+      </div>
+
+      <p className="mt-3 text-xs font-medium text-ink/50">
+        {saved ? '내 타임테이블에 저장됨 · 별을 다시 누르면 빠져요' : '별을 누르면 내 타임테이블에 저장돼요'}
+      </p>
+
+      {p.program && (
+        <Link
+          to={`/program/${p.program.category}/${p.program.id}`}
+          className="mt-4 flex items-center justify-center rounded-2xl border-2 border-ink bg-white/60 py-3 text-sm font-bold active:bg-butter/40"
+        >
+          {p.kind === 'lineup' ? '아티스트 정보 보기' : '프로그램 정보 보기'} →
+        </Link>
+      )}
+    </BottomSheet>
   )
 }
 
