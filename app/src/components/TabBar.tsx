@@ -34,7 +34,8 @@ const tabs = [
 
 export default function TabBar() {
   return (
-    <nav className="grid grid-cols-6 bg-ink pb-[env(safe-area-inset-bottom)]">
+    // 화면 아래 고정, 아이폰 홈 바 영역(safe-area)까지 검정으로 채움
+    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-[480px] grid-cols-6 bg-ink pb-[env(safe-area-inset-bottom)]">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
