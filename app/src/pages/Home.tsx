@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import NoticeList from '../components/NoticeList'
 import Placeholder from '../components/Placeholder'
 import Star from '../components/Star'
-import { formatDate } from '../lib/date'
-import { supabase } from '../lib/supabase'
-
-type Notice = {
-  id: number
-  title: string
-  is_pinned: boolean
-  created_at: string
-}
+import { fetchNotices } from '../lib/notice'
+import { useAsync } from '../lib/useAsync'
 
 const TICKET_URL = 'https://thegratefulcamp.com/lookbook/list_basic.html?cate_no=25'
 
@@ -18,56 +12,29 @@ const tickets = [
   { name: ['Camping', 'Ticket'], sub: '캠핑권 예매하기', bg: 'from-butter to-teal', star: 'text-paper' },
 ]
 
-function SectionTitle({ en, ko }: { en: string; ko: string }) {
+function SectionTitle({ en, ko, more }: { en: string; ko: string; more?: string }) {
   return (
     <h2 className="mb-2 flex items-baseline gap-2">
       <span className="font-display text-xl uppercase tracking-wide">{en}</span>
       <span className="text-xs font-semibold text-ink/55">{ko}</span>
+      {more && (
+        <Link to={more} className="ml-auto text-xs font-semibold text-ink/55 underline-offset-2 active:underline">
+          전체보기 ›
+        </Link>
+      )}
     </h2>
   )
 }
 
 // 고정 공지 먼저, 그다음 최신순으로 3개
-function useRecentNotices() {
-  const [notices, setNotices] = useState<Notice[] | null>(null)
+function RecentNotices() {
+  const notices = useAsync(() => fetchNotices(3), [])
 
-  useEffect(() => {
-    if (!supabase) return
-    supabase
-      .from('notice')
-      .select('id, title, is_pinned, created_at')
-      .order('is_pinned', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(3)
-      .then(({ data, error }) => {
-        if (error) console.error(error)
-        setNotices(data ?? [])
-      })
-  }, [])
+  if (notices.status === 'loading') return <Placeholder>불러오는 중…</Placeholder>
+  if (notices.status === 'error') return <Placeholder>공지를 불러오지 못했어요</Placeholder>
+  if (notices.data.length === 0) return <Placeholder>등록된 공지가 없어요</Placeholder>
 
-  return notices
-}
-
-function NoticeList() {
-  const notices = useRecentNotices()
-
-  if (!supabase) return <Placeholder>.env에 Supabase 설정이 없어요</Placeholder>
-  if (notices === null) return <Placeholder>불러오는 중…</Placeholder>
-  if (notices.length === 0) return <Placeholder>등록된 공지가 없어요</Placeholder>
-
-  return (
-    <ul className="divide-y divide-ink/10 rounded-2xl border-2 border-ink bg-white/60">
-      {notices.map((n) => (
-        <li key={n.id} className="flex items-center gap-2 px-4 py-3 text-sm">
-          {n.is_pinned && (
-            <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold text-butter">고정</span>
-          )}
-          <span className="truncate font-medium">{n.title}</span>
-          <span className="ml-auto shrink-0 text-xs text-ink/45">{formatDate(n.created_at)}</span>
-        </li>
-      ))}
-    </ul>
-  )
+  return <NoticeList notices={notices.data} />
 }
 
 export default function Home() {
@@ -119,8 +86,8 @@ export default function Home() {
       </section>
 
       <section>
-        <SectionTitle en="Notice" ko="공지사항" />
-        <NoticeList />
+        <SectionTitle en="Notice" ko="공지사항" more="/more/notice" />
+        <RecentNotices />
       </section>
     </div>
   )
